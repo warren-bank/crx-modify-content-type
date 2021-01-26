@@ -1,5 +1,5 @@
 const debug = false
-const localStorageKey = 'at.flansch.modifycontenttype.rules'
+const localStorageKey = 'rules'
 
 let rules = []  // {urlRE, matchRE, replaceText, disposition, isValid}
 
@@ -19,13 +19,33 @@ const preprocess_serialized_rules = () => {
   }
 }
 
-if (localStorage[localStorageKey]) {
-  try {
-    rules = JSON.parse(localStorage[localStorageKey])
+const read_serialized_rules_from_storage = (callback) => {
+  const callbackWrapper = (typeof callback !== 'function')
+    ? null
+    : (result) => {
+        const serialized_rules = result ? result[localStorageKey] : null
+        callback( serialized_rules )
+      }
 
-    preprocess_serialized_rules()
+  chrome.storage.local.get([localStorageKey], callbackWrapper)
+}
+
+const init_background_rules = () => {
+  const callback = (serialized_rules) => {
+    if (serialized_rules) {
+      try {
+        rules = JSON.parse( serialized_rules )
+        preprocess_serialized_rules()
+      }
+      catch(error) {}
+    }
   }
-  catch(error) {}
+
+  read_serialized_rules_from_storage(callback)
+}
+
+const write_serialized_rules_to_storage = (serialized_rules, callback) => {
+  chrome.storage.local.set({[localStorageKey]: serialized_rules}, callback)
 }
 
 chrome.webRequest.onHeadersReceived.addListener(details => {
@@ -111,16 +131,30 @@ chrome.webRequest.onHeadersReceived.addListener(details => {
 }, {
   urls:  ["<all_urls>"],
   types: ["main_frame", "sub_frame"]
-}, ["blocking", "responseHeaders"]);
+}, ["blocking", "responseHeaders"])
 
-chrome.runtime.onMessage.addListener(message => {
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message) {
     debug && console.log('message received of type:', message.type)
 
-    if ((message.type === 'ruleschanged') && Array.isArray(message.data)) {
-      rules = message.data
+    switch(message.type) {
+      case 'rules_changed':
+        if (Array.isArray(message.data)) {
+          write_serialized_rules_to_storage( JSON.stringify(message.data) )
 
-      preprocess_serialized_rules()
+          rules = message.data
+          preprocess_serialized_rules()
+        }
+        break
+      case 'get_rules':
+        sendResponse(rules.map(rule => ({
+          ...rule,
+          urlRE:   (rule.urlRE   instanceof RegExp) ? rule.urlRE.source   : rule.urlRE,
+          matchRE: (rule.matchRE instanceof RegExp) ? rule.matchRE.source : rule.matchRE
+        })))
+        break
     }
   }
-});
+})
+
+init_background_rules()
