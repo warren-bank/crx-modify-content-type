@@ -1,49 +1,126 @@
-var debug = !1,
-  rules = [];
+const debug = false
+const localStorageKey = 'at.flansch.modifycontenttype.rules'
 
-localStorage["at.flansch.modifycontenttype.rules"] && (rules = JSON.parse(localStorage["at.flansch.modifycontenttype.rules"]), $.each(rules, function(b, a) {
-  a.urlRE = RegExp(a.urlRE);
-  a.matchRE = RegExp(a.matchRE)
-}));
+let rules = []  // {urlRE, matchRE, replaceText, disposition, isValid}
 
-chrome.webRequest.onHeadersReceived.addListener(function(b) {
-  var a, c = [];
-  for (a = 0; a < rules.length; a++) rules[a].urlRE.test(b.url) && c.push(a);
-  if (0 < c.length) {
-    var e = -1,
-      d = -1;
-    for (a = 0; a < b.responseHeaders.length; a++) switch (b.responseHeaders[a].name.toLowerCase()) {
-      case "content-type":
-        e = a;
-        break;
-      case "content-disposition":
-        d = a
+const preprocess_serialized_rules = () => {
+  let index, rule
+  for (index = 0; index < rules.length; index++) {
+    rule = rules[index]
+
+    try {
+      rule.urlRE   = RegExp(rule.urlRE)
+      rule.matchRE = RegExp(rule.matchRE)
+      rule.isValid = true
     }
-    if (-1 < e)
-      for (a = 0; a < c.length; a++)
-        if (rules[c[a]].matchRE.test(b.responseHeaders[e].value)) {
-          debug && console.log("modified header", b.responseHeaders[e].value, rules[c[a]].replaceText);
-          b.responseHeaders[e].value =
-            rules[c[a]].replaceText;
-          "<remove>" == rules[c[a]].disposition && -1 < d ? (debug && console.log("removed disposition"), b.responseHeaders.splice(d, 1)) : "<unchanged>" != rules[c[a]].disposition && (-1 < d ? (b.responseHeaders[d].value = rules[c[a]].disposition, debug && console.log("modified disposition", b.responseHeaders[d].value, rules[c[a]].disposition)) : (b.responseHeaders.push({
-            name: "content-disposition",
-            value: rules[c[a]].disposition
-          }), debug && console.log("added disposition", rules[c[a]].disposition)));
+    catch(error) {
+      rule.isValid = false
+    }
+  }
+}
+
+if (localStorage[localStorageKey]) {
+  try {
+    rules = JSON.parse(localStorage[localStorageKey])
+
+    preprocess_serialized_rules()
+  }
+  catch(error) {}
+}
+
+chrome.webRequest.onHeadersReceived.addListener(details => {
+  const matching_rule_indexes = []
+  let index, rule
+
+  for (index = 0; index < rules.length; index++) {
+    rule = rules[index]
+
+    if (rule.isValid && rule.urlRE.test(details.url)) {
+      matching_rule_indexes.push(index)
+    }
+  }
+
+  if (matching_rule_indexes.length) {
+    let header_index_content_type        = -1
+    let header_index_content_disposition = -1
+    let header_name, header_value, rule_index
+
+    for (index = 0; index < details.responseHeaders.length; index++) {
+      header_name = details.responseHeaders[index].name.toLowerCase()
+
+      switch(header_name) {
+        case 'content-type':
+          header_index_content_type = index
           break
+        case 'content-disposition':
+          header_index_content_disposition = index
+          break
+      }
+    }
+
+    if (header_index_content_type >=0) {
+      for (index = 0; index < matching_rule_indexes.length; index++) {
+        header_value = details.responseHeaders[ header_index_content_type ].value
+        rule_index   = matching_rule_indexes[index]
+        rule         = rules[rule_index]
+
+        if (rule.matchRE.test(header_value)) {
+          if (rule.replaceText) {
+            debug && console.log('modified content-type header', header_value, rule.replaceText)
+
+            details.responseHeaders[ header_index_content_type ].value = rule.replaceText
+          }
+
+          if (rule.disposition) {
+            switch(rule.disposition) {
+              case '<unchanged>':
+                debug && console.log('disposition is unchanged')
+                break
+              case '<remove>':
+                debug && console.log('disposition is removed')
+                if (header_index_content_disposition >=0) {
+                  details.responseHeaders.splice(header_index_content_disposition, 1)
+                }
+                break
+              default:
+                if (header_index_content_disposition >=0) {
+                  if (debug) {
+                    header_value = details.responseHeaders[ header_index_content_disposition ].value
+                    console.log('modified content-disposition header', header_value, rule.disposition)
+                  }
+
+                  details.responseHeaders[ header_index_content_disposition ].value = rule.disposition
+                }
+                else {
+                  debug && console.log('added content-disposition header', rule.disposition)
+
+                  details.responseHeaders.push({
+                    name:  'content-disposition',
+                    value: rule.disposition
+                  })
+                }
+                break
+            }
+          }
         }
+      }
+    }
   }
-  return {
-    responseHeaders: b.responseHeaders
-  }
+
+  return {responseHeaders: details.responseHeaders}
 }, {
-  urls: ["<all_urls>"],
+  urls:  ["<all_urls>"],
   types: ["main_frame", "sub_frame"]
 }, ["blocking", "responseHeaders"]);
 
-chrome.runtime.onMessage.addListener(function(b, a, c) {
-  debug && console.log("message received" + (b && b.type ? b.type : "request object empty"));
-  b && "ruleschanged" == b.type && (rules = b.data, $.each(rules, function(a, b) {
-    b.urlRE = RegExp(b.urlRE);
-    b.matchRE = RegExp(b.matchRE)
-  }))
+chrome.runtime.onMessage.addListener(message => {
+  if (message) {
+    debug && console.log('message received of type:', message.type)
+
+    if ((message.type === 'ruleschanged') && Array.isArray(message.data)) {
+      rules = message.data
+
+      preprocess_serialized_rules()
+    }
+  }
 });

@@ -1,6 +1,6 @@
 {
   "name": "Modify Content-Type - Extended",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "manifest_version": 2,
   "description": "Change the response content type to force documents to open in or outside the browser window or in a special view mode (PDF, XML...)",
   "icons": {
@@ -10,7 +10,6 @@
   },
   "background": {
     "scripts": [
-      "vendor/jquery/jquery.min.js",
       "background.js"
     ]
   },
