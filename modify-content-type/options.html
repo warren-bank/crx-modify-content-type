@@ -12,16 +12,14 @@
     <h1>Modify Content-Type Options</h1>
     <p>
       Enter rules below to define when to change the Content-Type and Content-Disposition header fields.
-      An <i>URL filter</i> regular expression is needed to define on which pages this rule should be applied.
-      The <i>Original Type</i> regular expression will be evaluated against the incoming content type.
-      If it matches, the header value will be set to the <i>Replacement Type</i>.
-      <br/>
-      If required, you can set an explicit value for the Content-Disposition header field (or remove it), by default it will be left unchanged.
-      Use <i>inline</i> to open the document inside the browser and <i>attachment</i> to enforce a download.
     </p>
-    <input class="addButton" type="button" value="Add Rule"/>
+    <div>
+      <input class="addButton"            type="button" value="Add Rule" />
+      <input class="exportButton"         type="button" value="Export Rules" />
+      <input class="importButton"         type="button" value="Import Rules" />
+      <input class="removeAllRulesButton" type="button" value="Remove All Rules" />
+    </div>
     <ul id="ruleList"></ul>
-    <input class="addButton" type="button" value="Add Rule"/>
     <div id="inputForm">
       <h2>Rule Editor</h2>
       <table>
@@ -67,6 +65,21 @@
         </tr>
       </table>
     </div>
+    <p>
+      <h2>Instructions</h2>
+      <ul>
+        <li>A <i>URL filter</i> regular expression is needed to define on which pages this rule should be applied.</li>
+        <li>The <i>Original Type</i> regular expression will be evaluated against the incoming content type.</li>
+        <li>If it matches, the header value will be set to the <i>Replacement Type</i>.</li>
+        <li>If required, you can set an explicit value for the Content-Disposition header field (or remove it).
+          <ul>
+            <li>By default, it will be left unchanged.</li>
+            <li>Use <i>inline</i> to open the document inside the browser.</li>
+            <li>Use <i>attachment</i> to enforce a download.</li>
+          </ul>
+        </li>       
+      </ul>
+    </p>
     <p>
       <h2>Regular expression tips and tricks</h2>
       <ul>

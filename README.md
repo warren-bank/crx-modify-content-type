@@ -20,12 +20,13 @@ It also can be used to override unknown mime types sent by misconfigured servers
   - cleaned up code whitespace/formatting
 * security audit:
   - replaced vendor libraries with clean copies from official CDN
-
-#### Roadmap:
-
 * refactoring:
-  - remove jQuery from background script (not needed)
+  - remove jQuery from background script
+  - storage migrated from `localStorage` to `chrome.storage.local`
+    * all direct access to storage isolated to background script
+    * other scripts need to proxy access to storage through background script via message passing and callback
 * new features:
+  - ability to remove all rules
   - ability to backup and restore rules to/from an external text file in JSON format
 
 #### Screenshots:

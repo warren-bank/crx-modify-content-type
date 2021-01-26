@@ -33,6 +33,10 @@ $(function() {
     $("#inputForm input[type='hidden']").val("");
     $("#inputForm").hide()
   })
+
+  $(".exportButton").click(ExportRules);
+  $(".importButton").click(ImportRules);
+  $(".removeAllRulesButton").click(RemoveAllRules);
 });
 
 function HTMLEncode(a) {
@@ -112,13 +116,17 @@ function SaveRules() {
   });
   console.log("save", a);
 
+  SaveChangedRules(a)
+};
+
+function SaveChangedRules(rules) {
   chrome.extension.sendMessage({
     type: "rules_changed",
-    data: a
+    data: rules
   });
 
   setTimeout(() => location.reload(), 250)
-};
+}
 
 function InitializeRules() {
   chrome.extension.sendMessage({
@@ -134,14 +142,56 @@ function InitializeRules() {
       return
     }
 
-    try {
-      let rule
-      for (let i=0; i < rules.length; i++) {
-        rule = rules[i]
-
-        DrawRule(rule.name, rule.urlRE, rule.matchRE, rule.replaceText, rule.disposition, rule.isValid)
-      }
+    let rule
+    for (let i=0; i < rules.length; i++) {
+      rule = rules[i]
+      DrawRule(rule.name, rule.urlRE, rule.matchRE, rule.replaceText, rule.disposition, rule.isValid)
     }
-    catch(error) {}
+
+    window.ModifyContentTypeRules = rules
   });
+}
+
+function ExportRules() {
+  if (window.ModifyContentTypeRules) {
+    const json = JSON.stringify(window.ModifyContentTypeRules, null, 2)
+
+    const blob     = new Blob([json], {type: 'octet/stream'})
+    const filename = 'full_export.json'
+    const url      = window.URL.createObjectURL(blob)
+    const anchor   = document.createElement('a')
+    anchor.setAttribute('href', url)
+    anchor.setAttribute('download', filename)
+    anchor.click()
+  }
+}
+
+function ImportRules() {
+  const input = document.createElement('input')
+  input.setAttribute('type',   'file')
+  input.setAttribute('accept', 'text/plain, application/json, .txt, .json')
+  input.addEventListener('change', (event) => {
+    const files = event.target.files
+
+    if (files.length) {
+      const reader = new FileReader()
+      reader.onload = function(){
+        const json = reader.result
+        try {
+          const rules = JSON.parse(json)
+          SaveChangedRules(rules)
+        }
+        catch(error) {
+          alert('Import Failed: File does not contain well-formatted JSON')
+        }
+      }
+      reader.readAsText(files[0])
+    }
+  })
+  input.click()
+}
+
+function RemoveAllRules() {
+  const rules = []
+  SaveChangedRules(rules)
 }
