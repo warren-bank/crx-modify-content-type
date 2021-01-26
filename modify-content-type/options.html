@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Modify Content-Type Options</title>
+  <script type="text/javascript" src="vendor/jquery/jquery.min.js"></script>
+  <script type="text/javascript" src="options/js/options.js"></script>
+  <link rel="stylesheet" href="options/css/options.css"/>
+</head>
+<body>
+  <div id="outer">
+    <img id="extIcon" src="icon/icon_128.png" />
+    <h1>Modify Content-Type Options</h1>
+    <p>
+      Enter rules below to define when to change the Content-Type and Content-Disposition header fields.
+      An <i>URL filter</i> regular expression is needed to define on which pages this rule should be applied.
+      The <i>Original Type</i> regular expression will be evaluated against the incoming content type.
+      If it matches, the header value will be set to the <i>Replacement Type</i>.
+      <br/>
+      If required, you can set an explicit value for the Content-Disposition header field (or remove it), by default it will be left unchanged.
+      Use <i>inline</i> to open the document inside the browser and <i>attachment</i> to enforce a download.
+    </p>
+    <input class="addButton" type="button" value="Add Rule"/>
+    <ul id="ruleList"></ul>
+    <input class="addButton" type="button" value="Add Rule"/>
+    <div id="inputForm">
+      <h2>Rule Editor</h2>
+      <table>
+        <tr>
+          <td>Name</td>
+          <td>
+            <input type="text" name="name" size="40" placeholder="Optional rule name" />
+          </td>
+        </tr>
+        <tr>
+          <td>URL Filter (Regex)*</td>
+          <td>
+            <input type="text" name="url" size="40" placeholder="URLs that this rule applies to" />
+          </td>
+        </tr>
+        <tr>
+          <td>Original Type (Regex)*</td>
+          <td>
+            <input type="text" name="match" size="40" placeholder="Content type that should be replaced" />
+          </td>
+        </tr>
+        <tr>
+          <td>Replacement Type*</td>
+          <td>
+            <input type="text" name="replace" size="40" placeholder="New content type" />
+          </td>
+        </tr>
+        <tr>
+          <td>Disposition</td>
+          <td>
+            <input type="text" name="disposition" size="40" placeholder="&lt;unchanged&gt;, &lt;remove&gt;, inline, attachment[; filename=test.txt]" />
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <input type="hidden" name="editedItem" value="" />
+            <input class="dlgAddButton" type="button" value="Save Rule" />
+            <input class="dlgCancelButton" type="button" value="Cancel" />
+          </td>
+          <td>
+            &nbsp;&nbsp; * required fields
+          </td>
+        </tr>
+      </table>
+    </div>
+    <p>
+      <h2>Regular expression tips and tricks</h2>
+      <ul>
+        <li>
+          The dot . means <i>any character</i>, so if you want to match a dot character, it must be preceded by a backslash, f.e.:
+          <br/>
+          <i>
+            http://www\.google\.com
+            <br/>
+            application/vnd\.ogc\.wms_xml
+          </i>
+        </li>
+        <li>The following characters also have a special meaning and must be escaped with a preceding backslash: ^ [ $ { * ( ) \ + | ? &lt; &gt;</li>
+        <li>
+          <i>.*</i> means <i>any number of any character</i>.
+        </li>
+        <li>
+          The expressions search anywhere in the string, so if you f.e. want to match http und https, just leave out the protocol
+          <br>
+          <i>www\.google\.com</i>
+        </li>
+      </ul>
+    </p>
+  </div>
+</body>
+</html>

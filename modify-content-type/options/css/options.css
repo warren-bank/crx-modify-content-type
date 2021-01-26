@@ -1,0 +1,13 @@
+html,body{width:100%;height:100%;padding:0;margin:0}
+body{color:#000;font:10pt Verdana,Arial,sans-serif}
+#outer{padding:10px}
+#inputForm{display:none;position:fixed;z-index:999999;top:10px;width:50%;margin:0 0 0 25%;padding:5px;background-color:#ffffd5;box-shadow:0 0 8px 3px rgba(0,0,0,.5)}
+h1{font-size:135%}
+h2{display:inline;font-size:115%}
+ul{list-style-type:none;padding:0;margin:0}
+li{border:1px solid #ccc;padding:5px;margin:5px 20px}
+#extIcon{display:block;float:left;margin:10px 10px 0 0;height:2em}
+p{clear:both}
+table{width:100%}
+td:first-child{white-space:nowrap;width:1%}
+td:last-child input{width:100%;margin:0}
